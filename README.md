@@ -1,7 +1,5 @@
 # uri
 
-
-
 #### 介绍
 一个简单地解析和操作URL的类库
 
@@ -9,7 +7,7 @@
 最低支持php7.2，通过composer安装：
 
 ```php
-composer require filippo-toso/uri
+composer require ulthon/uri
 ```
 
 基本的使用方式如下，通过`make`静态方法或手动实例化：
