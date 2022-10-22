@@ -1,0 +1,18 @@
+{
+    "name": "ulthon/uri",
+    "description": "一个简单地解析和操作URI的类库",
+    "type": "library",
+    "license": "MulanPSL-2.0",
+    "autoload": {
+        "psr-4": {
+            "Ulthon\\URI\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "augushong",
+            "email": "augushong@ulthon.com"
+        }
+    ],
+    "require": {}
+}
