@@ -36,12 +36,12 @@ class URI
     protected $encodingType = \PHP_QUERY_RFC1738;
 
     /**
-     * Create an instance of the class 
+     * Create an instance of the class
      * @param string $url The url that you want to parse
      * @param string $numericPrefix http_build_query optional parameter used to build the querystring
      * @param string $argSeparator http_build_query optional parameter used to build the querystring
      * @param int $encodingType http_build_query optional parameter used to build the querystring
-     * @return URI 
+     * @return URI
      */
     public static function make(string $url, string $numericPrefix = '', string $argSeparator = '&', int $encodingType = \PHP_QUERY_RFC1738)
     {
@@ -49,12 +49,12 @@ class URI
     }
 
     /**
-     * Create an instance of the class 
+     * Create an instance of the class
      * @param string $url The url that you want to parse
      * @param string $numericPrefix http_build_query optional parameter used to build the querystring
      * @param string $argSeparator http_build_query optional parameter used to build the querystring
      * @param int $encodingType http_build_query optional parameter used to build the querystring
-     * @return URI 
+     * @return URI
      */
     public function __construct(string $url, string $numericPrefix = '', string $argSeparator = '&', int $encodingType = \PHP_QUERY_RFC1738)
     {
@@ -67,7 +67,7 @@ class URI
     /**
      * Parse a new url
      * @param string $url The url that you want to parse
-     * @return URI 
+     * @return URI
      */
     public function parse($url)
     {
@@ -134,7 +134,7 @@ class URI
      * Update the URI instance with a relative url.
      * The url can be: a full url, an absolute path or a relative path.
      * It can also include the querystring and the fragment.
-     * 
+     *
      * @param string $url The relative url
      * @return URI
      */
@@ -314,6 +314,18 @@ class URI
     {
         return $this->dot($key, $this->params, function ($key, &$array) {
             return $array[$key];
+        });
+    }
+
+    /**
+     * Check if a parameter exists
+     *
+     * @param string $key The key in dot notation
+     */
+    public function has($key)
+    {
+        return $this->dot($key, $this->params, function ($key, &$array) {
+            return isset($array[$key]);
         });
     }
 
