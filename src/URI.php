@@ -11,12 +11,11 @@ namespace Ulthon\URI;
  * @method path($path = null)
  * @method fragment($fragment = null)
  */
-
 class URI
 {
-    protected const PROPERTIES = ['scheme', 'user', 'pass', 'host', 'port', 'path', 'query', 'fragment'];
-    protected const HTTPS_SCHEME = 'https';
-    protected const DEFAULT_SCHEME = self::HTTPS_SCHEME;
+    const PROPERTIES = ['scheme', 'user', 'pass', 'host', 'port', 'path', 'query', 'fragment'];
+    const HTTPS_SCHEME = 'https';
+    const DEFAULT_SCHEME = self::HTTPS_SCHEME;
 
     protected $original;
 
@@ -37,26 +36,28 @@ class URI
 
     /**
      * Create an instance of the class
-     * @param string $url The url that you want to parse
-     * @param string $numericPrefix http_build_query optional parameter used to build the querystring
-     * @param string $argSeparator http_build_query optional parameter used to build the querystring
-     * @param int $encodingType http_build_query optional parameter used to build the querystring
+     *
+     * @param string $url
+     * @param string $numericPrefix
+     * @param string $argSeparator
+     * @param int    $encodingType
      * @return URI
      */
-    public static function make(string $url, string $numericPrefix = '', string $argSeparator = '&', int $encodingType = \PHP_QUERY_RFC1738)
+    public static function make($url, $numericPrefix = '', $argSeparator = '&', $encodingType = \PHP_QUERY_RFC1738)
     {
         return new static($url, $numericPrefix, $argSeparator, $encodingType);
     }
 
     /**
      * Create an instance of the class
-     * @param string $url The url that you want to parse
-     * @param string $numericPrefix http_build_query optional parameter used to build the querystring
-     * @param string $argSeparator http_build_query optional parameter used to build the querystring
-     * @param int $encodingType http_build_query optional parameter used to build the querystring
+     *
+     * @param string $url
+     * @param string $numericPrefix
+     * @param string $argSeparator
+     * @param int    $encodingType
      * @return URI
      */
-    public function __construct(string $url, string $numericPrefix = '', string $argSeparator = '&', int $encodingType = \PHP_QUERY_RFC1738)
+    public function __construct($url, $numericPrefix = '', $argSeparator = '&', $encodingType = \PHP_QUERY_RFC1738)
     {
         $this->numericPrefix = $numericPrefix;
         $this->argSeparator = $argSeparator;
@@ -66,7 +67,8 @@ class URI
 
     /**
      * Parse a new url
-     * @param string $url The url that you want to parse
+     *
+     * @param string $url
      * @return URI
      */
     public function parse($url)
@@ -77,11 +79,11 @@ class URI
 
         $parsed = parse_url($url);
 
-        foreach (static::PROPERTIES as $property) {
-            $this->$property = $parsed[$property] ?? null;
+        foreach (self::PROPERTIES as $property) {
+            $this->$property = isset($parsed[$property]) ? $parsed[$property] : null;
         }
 
-        $this->path = $this->path ?? '/';
+        $this->path = isset($this->path) ? $this->path : '/';
 
         $this->parseQuery();
 
@@ -90,10 +92,10 @@ class URI
 
     protected function protocolRelative($url)
     {
-        // Handle urls that starts with ://
-        if (strpos($url, '://') === 0) {
-            $scheme = $this->scheme ?? static::DEFAULT_SCHEME;
-            $url = $scheme . $url;
+        // Handle protocol-relative URLs (//example.com) and malformed (://example.com)
+        if (strncmp($url, '//', 2) === 0) {
+            $scheme = isset($this->scheme) ? $this->scheme : self::DEFAULT_SCHEME;
+            $url = $scheme . ':' . $url;
         }
 
         return $url;
@@ -101,9 +103,9 @@ class URI
 
     protected function protocolAndPathRelative($url)
     {
-        // Handle urls that starts with :///
-        if (strpos($url, ':///') === 0) {
-            $scheme = $this->scheme ?? static::DEFAULT_SCHEME;
+        // Handle urls that start with :///
+        if (strncmp($url, ':///', 4) === 0) {
+            $scheme = isset($this->scheme) ? $this->scheme : self::DEFAULT_SCHEME;
 
             if (is_null($this->port)) {
                 $url = $scheme . '://' . $this->host . substr($url, 3);
@@ -117,13 +119,14 @@ class URI
 
     protected function parseQuery()
     {
-        parse_str($this->query, $this->params);
+        // PHP 8.1 fix: parse_str() no longer accepts null
+        parse_str((string) $this->query, $this->params);
     }
 
     /**
      * Get the original url
      *
-     * @return URI
+     * @return string
      */
     public function original()
     {
@@ -132,32 +135,30 @@ class URI
 
     /**
      * Update the URI instance with a relative url.
-     * The url can be: a full url, an absolute path or a relative path.
-     * It can also include the querystring and the fragment.
      *
-     * @param string $url The relative url
+     * @param string $url
      * @return URI
      */
-    public function relative(string $url)
+    public function relative($url)
     {
         // It's a schemeless relative URL
-        if (strpos($url, ':///') !== false) {
+        if (strncmp($url, ':///', 4) === 0) {
             $url = $this->protocolAndPathRelative($url);
-            return $this->make($url);
+            return self::make($url);
         }
 
         // It's a full URL without scheme
         if (strpos($url, '://') !== false) {
             $url = $this->protocolRelative($url);
-            return $this->make($url);
+            return self::make($url);
         }
 
         // Path with params
         if (strpos($url, '?') !== false) {
-            [$path, $this->query] = explode('?', $url, 2);
+            list($path, $this->query) = explode('?', $url, 2);
 
             if (strpos($this->query, '#') !== false) {
-                [$this->query, $this->fragment] = explode('#', $this->query, 2);
+                list($this->query, $this->fragment) = explode('#', $this->query, 2);
             } else {
                 $this->fragment = null;
             }
@@ -169,10 +170,10 @@ class URI
 
         $path = trim($path);
 
-        if (substr($path, 0, 1) == '/') {
+        if (strncmp($path, '/', 1) === 0) {
             $this->path = $path;
         } else {
-            if (substr($path, 0, 2) == './') {
+            if (strncmp($path, './', 2) === 0) {
                 $path = substr($path, 2);
             }
             $base = substr($this->path, 0, strrpos($this->path, '/') + 1);
@@ -183,7 +184,7 @@ class URI
 
         while (in_array('..', $tokens)) {
             for ($i = 0; $i < count($tokens); $i++) {
-                if ($tokens[$i] == '..') {
+                if ($tokens[$i] === '..') {
                     unset($tokens[$i]);
                     unset($tokens[$i - 1]);
                     $tokens = array_values($tokens);
@@ -201,13 +202,13 @@ class URI
      * Get / set the path extension
      *
      * @param string $extension
-     * @return URI
+     * @return string|$this|null
      */
-    public function extension(string $extension = null)
+    public function extension($extension = null)
     {
         $pos = strrpos($this->path, '.');
 
-        if (func_num_args() == 0) {
+        if (func_num_args() === 0) {
             if ($pos === false) {
                 return null;
             } else {
@@ -228,11 +229,11 @@ class URI
      * Get / set the querystring parameters
      *
      * @param array $value
-     * @return URI
+     * @return array|$this
      */
-    public function params(array $value = [])
+    public function params(array $value = array())
     {
-        if (func_num_args() == 0) {
+        if (func_num_args() === 0) {
             return $this->params;
         }
 
@@ -244,18 +245,18 @@ class URI
     /**
      * Add a new parameter to the querystring parameters
      *
-     * @param string $key The key in dot notation
-     * @param mixed $value
+     * @param string $key
+     * @param mixed  $value
      * @return URI
      */
-    public function add(string $key, $value)
+    public function add($key, $value)
     {
         return $this->dot($key, $this->params, function ($key, &$array) use ($value) {
             if (isset($array[$key])) {
                 if (is_array($array[$key])) {
                     $array[$key][] = $value;
                 } else {
-                    $array[$key] = [$array[$key], $value];
+                    $array[$key] = array($array[$key], $value);
                 }
             } else {
                 $array[$key] = $value;
@@ -266,7 +267,7 @@ class URI
     /**
      * Remove a parameter from the querystring parameters
      *
-     * @param string|callable $keyOrCallback The key in dot notation or a callback that returns true if the element has to be removed
+     * @param string|callable $keyOrCallback
      * @return URI
      */
     public function remove($keyOrCallback)
@@ -293,11 +294,11 @@ class URI
     /**
      * Set a parameter of the querystring parameters
      *
-     * @param string $key The key in dot notation
-     * @param mixed $value
+     * @param string $key
+     * @param mixed  $value
      * @return URI
      */
-    public function set(string $key, $value)
+    public function set($key, $value)
     {
         return $this->dot($key, $this->params, function ($key, &$array) use ($value) {
             $array[$key] = $value;
@@ -307,10 +308,10 @@ class URI
     /**
      * Get a parameter of the querystring parameters
      *
-     * @param string $key The key in dot notation
-     * @return URI
+     * @param string $key
+     * @return mixed
      */
-    public function get(string $key)
+    public function get($key)
     {
         return $this->dot($key, $this->params, function ($key, &$array) {
             return $array[$key];
@@ -320,7 +321,8 @@ class URI
     /**
      * Check if a parameter exists
      *
-     * @param string $key The key in dot notation
+     * @param string $key
+     * @return bool
      */
     public function has($key)
     {
@@ -329,15 +331,16 @@ class URI
         });
     }
 
-    // @see https://github.com/laravel/framework/blob/c5908c59860177f607fb9c3b22add0513dcc7a9b/src/Illuminate/Collections/Arr.php#L286
-    protected function dot(string $key, &$array, $callback)
+    // @see https://github.com/laravel/framework/blob/.../Arr.php#L286
+    protected function dot($key, &$array, $callback)
     {
         if (!is_array($array) && !($array instanceof \ArrayAccess)) {
             return $this;
         }
 
         if (strpos($key, '.') === false) {
-            return $callback($key, $array) ?? $this;
+            $result = $callback($key, $array);
+            return isset($result) ? $result : $this;
         }
 
         $keys = explode('.', $key);
@@ -346,7 +349,7 @@ class URI
             $key = array_shift($keys);
 
             if (!isset($array[$key]) || !is_array($array[$key])) {
-                $array[$key] = [];
+                $array[$key] = array();
             }
 
             $array = &$array[$key];
@@ -355,13 +358,13 @@ class URI
         $key = array_shift($keys);
 
         $result = $callback($key, $array);
-        return $result ?? $this;
+        return isset($result) ? $result : $this;
     }
 
-    // @see https://github.com/laravel/framework/blob/c5908c59860177f607fb9c3b22add0513dcc7a9b/src/Illuminate/Collections/Arr.php#L109
+    // @see https://github.com/laravel/framework/blob/.../Arr.php#L109
     protected function dotted($array, $previous = '')
     {
-        $results = [];
+        $results = array();
 
         foreach ($array as $key => $value) {
             if (is_array($value) && !empty($value)) {
@@ -375,19 +378,18 @@ class URI
     }
 
     /**
-     * Get / set the querystring as a encoded string
+     * Get / set the querystring as an encoded string
      *
      * @param string $query
-     * @return URI
+     * @return string|$this
      */
     public function query($query = null)
     {
-        if (func_num_args() == 0) {
+        if (func_num_args() === 0) {
             return http_build_query($this->params, $this->numericPrefix, $this->argSeparator, $this->encodingType);
         }
 
         $this->query = $query;
-
         $this->parseQuery();
 
         return $this;
@@ -396,14 +398,14 @@ class URI
     /**
      * Dynamically set / get URI::PROPERTIES properties.
      *
-     * @param  string  $method
-     * @param  array  $parameters
-     * @return URI|void
+     * @param string $method
+     * @param array  $arguments
+     * @return mixed|$this
      */
-    public function __call(string $name, array $arguments)
+    public function __call($name, $arguments)
     {
-        if (in_array($name, static::PROPERTIES)) {
-            if (count($arguments) == 0) {
+        if (in_array($name, self::PROPERTIES)) {
+            if (count($arguments) === 0) {
                 return $this->$name;
             }
             $this->$name = $arguments[0];
@@ -420,7 +422,7 @@ class URI
     /**
      * Render the new url
      *
-     * @return void
+     * @return string
      */
     public function url()
     {
