@@ -35,12 +35,12 @@ class URI
     protected $encodingType = \PHP_QUERY_RFC1738;
 
     /**
-     * Create an instance of the class
+     * 创建类的实例
      *
-     * @param string $url
-     * @param string $numericPrefix
-     * @param string $argSeparator
-     * @param int    $encodingType
+     * @param string $url 需要解析的URL
+     * @param string $numericPrefix http_build_query 的可选参数，用于构建查询字符串
+     * @param string $argSeparator  http_build_query 的可选参数，用于构建查询字符串
+     * @param int    $encodingType  http_build_query 的可选参数，用于构建查询字符串
      * @return URI
      */
     public static function make($url, $numericPrefix = '', $argSeparator = '&', $encodingType = \PHP_QUERY_RFC1738)
@@ -49,12 +49,12 @@ class URI
     }
 
     /**
-     * Create an instance of the class
+     * 创建类的实例
      *
-     * @param string $url
-     * @param string $numericPrefix
-     * @param string $argSeparator
-     * @param int    $encodingType
+     * @param string $url 需要解析的URL
+     * @param string $numericPrefix http_build_query 的可选参数，用于构建查询字符串
+     * @param string $argSeparator  http_build_query 的可选参数，用于构建查询字符串
+     * @param int    $encodingType  http_build_query 的可选参数，用于构建查询字符串
      * @return URI
      */
     public function __construct($url, $numericPrefix = '', $argSeparator = '&', $encodingType = \PHP_QUERY_RFC1738)
@@ -66,9 +66,9 @@ class URI
     }
 
     /**
-     * Parse a new url
+     * 解析一个新的URL
      *
-     * @param string $url
+     * @param string $url 需要解析的URL
      * @return URI
      */
     public function parse($url)
@@ -92,7 +92,7 @@ class URI
 
     protected function protocolRelative($url)
     {
-        // Handle protocol-relative URLs (//example.com) and malformed (://example.com)
+        // 处理协议相对URL (//example.com) 以及不规范的 (://example.com)
         if (strncmp($url, '//', 2) === 0) {
             $scheme = isset($this->scheme) ? $this->scheme : self::DEFAULT_SCHEME;
             $url = $scheme . ':' . $url;
@@ -103,7 +103,7 @@ class URI
 
     protected function protocolAndPathRelative($url)
     {
-        // Handle urls that start with :///
+        // 处理以 :/// 开头的URL
         if (strncmp($url, ':///', 4) === 0) {
             $scheme = isset($this->scheme) ? $this->scheme : self::DEFAULT_SCHEME;
 
@@ -119,12 +119,12 @@ class URI
 
     protected function parseQuery()
     {
-        // PHP 8.1 fix: parse_str() no longer accepts null
+        // PHP 8.1 修复: parse_str() 不再接受 null 参数
         parse_str((string) $this->query, $this->params);
     }
 
     /**
-     * Get the original url
+     * 获取原始URL
      *
      * @return string
      */
@@ -134,26 +134,28 @@ class URI
     }
 
     /**
-     * Update the URI instance with a relative url.
+     * 使用相对URL更新URI实例。
+     * 该URL可以是完整的URL、绝对路径或相对路径。
+     * 也可以包含查询字符串和片段。
      *
-     * @param string $url
+     * @param string $url 相对URL
      * @return URI
      */
     public function relative($url)
     {
-        // It's a schemeless relative URL
+        // 这是一个无方案的相对URL
         if (strncmp($url, ':///', 4) === 0) {
             $url = $this->protocolAndPathRelative($url);
             return self::make($url);
         }
 
-        // It's a full URL without scheme
+        // 这是一个缺少方案的完整URL
         if (strpos($url, '://') !== false) {
             $url = $this->protocolRelative($url);
             return self::make($url);
         }
 
-        // Path with params
+        // 带查询参数的路径
         if (strpos($url, '?') !== false) {
             list($path, $this->query) = explode('?', $url, 2);
 
@@ -199,9 +201,9 @@ class URI
     }
 
     /**
-     * Get / set the path extension
+     * 获取/设置路径扩展名
      *
-     * @param string $extension
+     * @param string $extension 扩展名
      * @return string|$this|null
      */
     public function extension($extension = null)
@@ -226,9 +228,9 @@ class URI
     }
 
     /**
-     * Get / set the querystring parameters
+     * 获取/设置查询字符串参数
      *
-     * @param array $value
+     * @param array $value 参数数组
      * @return array|$this
      */
     public function params(array $value = array())
@@ -243,10 +245,10 @@ class URI
     }
 
     /**
-     * Add a new parameter to the querystring parameters
+     * 向查询字符串参数中添加新参数
      *
-     * @param string $key
-     * @param mixed  $value
+     * @param string $key   点分键名
+     * @param mixed  $value 值
      * @return URI
      */
     public function add($key, $value)
@@ -265,9 +267,9 @@ class URI
     }
 
     /**
-     * Remove a parameter from the querystring parameters
+     * 从查询字符串参数中删除一个参数
      *
-     * @param string|callable $keyOrCallback
+     * @param string|callable $keyOrCallback 点分键名或一个回调函数，若回调返回true则删除该元素
      * @return URI
      */
     public function remove($keyOrCallback)
@@ -292,10 +294,10 @@ class URI
     }
 
     /**
-     * Set a parameter of the querystring parameters
+     * 设置查询字符串参数
      *
-     * @param string $key
-     * @param mixed  $value
+     * @param string $key   点分键名
+     * @param mixed  $value 值
      * @return URI
      */
     public function set($key, $value)
@@ -306,9 +308,9 @@ class URI
     }
 
     /**
-     * Get a parameter of the querystring parameters
+     * 获取查询字符串参数
      *
-     * @param string $key
+     * @param string $key 点分键名
      * @return mixed
      */
     public function get($key)
@@ -319,9 +321,9 @@ class URI
     }
 
     /**
-     * Check if a parameter exists
+     * 检查参数是否存在
      *
-     * @param string $key
+     * @param string $key 点分键名
      * @return bool
      */
     public function has($key)
@@ -378,9 +380,9 @@ class URI
     }
 
     /**
-     * Get / set the querystring as an encoded string
+     * 获取/设置查询字符串为URL编码的字符串
      *
-     * @param string $query
+     * @param string $query 查询字符串
      * @return string|$this
      */
     public function query($query = null)
@@ -396,10 +398,10 @@ class URI
     }
 
     /**
-     * Dynamically set / get URI::PROPERTIES properties.
+     * 动态设置/获取 URI::PROPERTIES 属性。
      *
-     * @param string $method
-     * @param array  $arguments
+     * @param string $method    方法名
+     * @param array  $arguments 参数数组
      * @return mixed|$this
      */
     public function __call($name, $arguments)
@@ -420,7 +422,7 @@ class URI
     }
 
     /**
-     * Render the new url
+     * 渲染新的URL
      *
      * @return string
      */
